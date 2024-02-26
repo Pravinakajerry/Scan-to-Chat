@@ -6,13 +6,16 @@
     <title>ScanToChat.in - WhatsApp QR Code & Link Generator</title>
     <meta name="description" content="Generate WhatsApp QR Code and Link with ScanToChat.in. Your one-stop WhatsApp QR Code & Link Generator.">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
-    <script src="https://cdn.counter.dev/script.js" data-id="a40e18eb-988c-4bee-9910-d94d3e4bff0c" data-utcoffset="6"></script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
+
         body {
-            font-family: 'Open Sans', sans-serif;
+            font-family: 'Inter', sans-serif;
         }
+        
         .hidden {
             display: none;
         }
@@ -28,7 +31,7 @@
             <h2 class="text-2xl font-semibold mb-6 text-center">Generate Your Link</h2>
             <div class="mb-4">
                 <label for="phone" class="block text-gray-700 text-sm font-bold mb-2">Enter Phone Number</label>
-                <input type="tel" id="phone" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="(without +91) 7032102834">
+                <input type="tel" id="phone" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="(without +91) 7032102834" pattern="[0-9]{1,12}">
             </div>
             <div class="mb-6">
                 <label for="message" class="block text-gray-700 text-sm font-bold mb-2">Message</label>
@@ -42,7 +45,7 @@
                 </div>
                 <div id="qr-code" style="display: flex;padding: 20px;background-color: white;justify-content: center;"></div>
                 <div class="flex justify-center gap-4 mt-4">
-                    <!-- <button id="download-svg" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">Download SVG</button> -->
+                    <button id="download-svg" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">Download SVG</button>
                     <button id="download-png" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Download PNG</button>
                 </div>
             </div>
@@ -53,6 +56,7 @@
         </div> -->
     </div>
 
+
     <script>
         document.getElementById('generate').addEventListener('click', function() {
             let phone = document.getElementById('phone').value.trim();
@@ -60,67 +64,50 @@
                 phone = '+91' + phone;
             }
             const message = encodeURIComponent(document.getElementById('message').value.trim());
-            const whatsappLinkMobile = `https://wa.me/${phone.replace('+', '')}?text=${message}`;
-            const linkElement = document.getElementById('whatsapp-link');
-            const resultDiv = document.getElementById('result');
+            const whatsappLink = `https://wa.me/${phone.replace('+', '')}?text=${message}`;
+            document.getElementById('whatsapp-link').href = whatsappLink;
+            document.getElementById('whatsapp-link').innerHTML = 'Open <u>WhatsApp Link</u>';
+            document.getElementById('result').classList.remove('hidden');
 
-            linkElement.href = whatsappLinkMobile;
-            linkElement.innerHTML = 'Open <u>WhatsApp Link</u>';
-            resultDiv.classList.remove('hidden');
+            // Generate QR Code using qrcode-generator
+            let qr = qrcode(0, 'L');
+            qr.addData(whatsappLink);
+            qr.make();
 
-            const qrContainer = document.getElementById('qr-code');
-            qrContainer.innerHTML = '';
-            const qrCode = new QRCode(qrContainer, {
-                text: whatsappLinkMobile,
-                width: 128,
-                height: 128,
-                colorDark: "#000000",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.H
-            });
+            document.getElementById('qr-code').innerHTML = qr.createImgTag(4, 12); // For PNG with 12px padding
+            let svgTag = qr.createSvgTag({cellSize: 4, margin: 8, padding: 12}); // For SVG with 12px padding
 
             // Copy to Clipboard
             document.getElementById('copy-link').addEventListener('click', function() {
+                const whatsappLinkMobile = document.getElementById('whatsapp-link').href;
                 navigator.clipboard.writeText(whatsappLinkMobile).then(() => {
                     alert('Link copied to clipboard!');
                 });
             });
 
-            // Download QR as SVG - This feature requires additional implementation - (WIP)
-
-
-            // Download QR as PNG - This feature requires additional implementation - (V0)
+            // Handle PNG Download - Adjusted to work with qrcode-generator output
             document.getElementById('download-png').addEventListener('click', function() {
-            const qrCanvas = document.querySelector('#qr-code canvas');
-            if (qrCanvas) {
-                // Create a new canvas where we'll apply the padding
-                const canvasWithPadding = document.createElement('canvas');
-                const padding = 12; // Adjust the padding as needed
-                canvasWithPadding.width = qrCanvas.width + padding * 2;
-                canvasWithPadding.height = qrCanvas.height + padding * 2;
-                
-                const context = canvasWithPadding.getContext('2d');
-                
-                // Set background to white
-                context.fillStyle = '#ffffff';
-                context.fillRect(0, 0, canvasWithPadding.width, canvasWithPadding.height);
-                
-                // Draw the original QR code canvas onto the new canvas with padding
-                context.drawImage(qrCanvas, padding, padding);
-                
-                // Convert the new canvas to PNG and trigger download
-                const image = canvasWithPadding.toDataURL("image/png").replace("image/png", "image/octet-stream");
+                const qrCanvas = document.querySelector('#qr-code img'); // The library generates an image tag
+                const image = qrCanvas.src;
                 const link = document.createElement('a');
                 link.download = phone.replace('+91', '').replace('+', '') + '-qrcode.png';
                 link.href = image;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-            }
-        });
+            });
 
-
-
+            // Handle SVG Download
+            document.getElementById('download-svg').addEventListener('click', function() {
+                const svgData = new Blob([svgTag], {type: "image/svg+xml;charset=utf-8"});
+                const svgUrl = URL.createObjectURL(svgData);
+                const downloadLink = document.createElement('a');
+                downloadLink.href = svgUrl;
+                downloadLink.download = phone.replace('+91', '').replace('+', '') + '-qrcode.svg';
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+            });
         });
     </script>
 </body>
