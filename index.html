@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Link Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap');
+        body {
+            font-family: 'Open Sans', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+            <h1 class="text-2xl font-semibold mb-6 text-center">WhatsApp Link Generator</h1>
+            <div class="mb-4">
+                <label for="phone" class="block text-gray-700 text-sm font-bold mb-2">Enter Phone Number</label>
+                <input type="tel" id="phone" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="(without +91) 7032102834">
+            </div>
+            <div class="mb-6">
+                <label for="message" class="block text-gray-700 text-sm font-bold mb-2">Message</label>
+                <textarea id="message" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Your message here"></textarea>
+            </div>
+            <button id="generate" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full mb-4">Generate Link</button>
+            <div id="result" class="text-center" style="display: none;">
+                <a id="whatsapp-link" href="#" class="text-blue-500 hover:text-blue-700" target="_blank">Open WhatsApp Link</a>
+                <div class="mt-4" id="qr-code"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('generate').addEventListener('click', function() {
+            let phone = document.getElementById('phone').value.trim();
+            // Check if the phone number already starts with '+91', if not, prepend it
+            if (!phone.startsWith('+91')) {
+                phone = '+91' + phone;
+            }
+            const message = encodeURIComponent(document.getElementById('message').value.trim());
+    
+            // Use wa.me for the QR code, which is more universally compatible with mobile devices
+            const whatsappLinkMobile = `https://wa.me/${phone.replace('+', '')}?text=${message}`;
+    
+            const linkElement = document.getElementById('whatsapp-link');
+            const resultDiv = document.getElementById('result');
+    
+            // Decide the link based on the device
+            const whatsappLink = navigator.userAgent.match(/mobile/i)
+                ? whatsappLinkMobile
+                : `https://web.whatsapp.com/send?phone=${phone}&text=${message}`;
+    
+            linkElement.href = whatsappLink;
+            linkElement.textContent = 'Open WhatsApp Link';
+            resultDiv.style.display = 'block';
+    
+            // Clear previous QR Code
+            const qrContainer = document.getElementById('qr-code');
+            qrContainer.innerHTML = '';
+            // Generate new QR Code with the mobile link
+            new QRCode(qrContainer, {
+                text: whatsappLinkMobile, // Use the mobile-friendly link for QR
+                width: 128,
+                height: 128,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        });
+    </script>
+    
+</body>
+</html>
