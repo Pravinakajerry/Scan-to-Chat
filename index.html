@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Link Generator</title>
+    <title>ScanToChat.in - WhatsApp QR Code & Link Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
     <style>
@@ -11,12 +11,19 @@
         body {
             font-family: 'Open Sans', sans-serif;
         }
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
-    <div class="min-h-screen flex items-center justify-center">
+    <div class="min-h-screen flex flex-col items-center justify-center">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold mb-2">Scan To Chat</h1>
+            <p class="text-lg font-semibold text-gray-700">Your one-stop WhatsApp QR Code & Link Generator</p>
+        </div>
         <div class="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
-            <h1 class="text-2xl font-semibold mb-6 text-center">WhatsApp Link Generator</h1>
+            <h2 class="text-2xl font-semibold mb-6 text-center">Generate Your Link</h2>
             <div class="mb-4">
                 <label for="phone" class="block text-gray-700 text-sm font-bold mb-2">Enter Phone Number</label>
                 <input type="tel" id="phone" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="(without +91) 7032102834">
@@ -26,51 +33,92 @@
                 <textarea id="message" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Your message here"></textarea>
             </div>
             <button id="generate" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full mb-4">Generate Link</button>
-            <div id="result" class="text-center" style="display: none;">
-                <a id="whatsapp-link" href="#" class="text-blue-500 hover:text-blue-700" target="_blank">Open WhatsApp Link</a>
-                <div class="mt-4" id="qr-code"></div>
+            <div id="result" class="hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <a id="whatsapp-link" href="#" class="text-blue-500 hover:text-blue-700" target="_blank">Open WhatsApp Link</a>
+                    <button id="copy-link" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-1 px-2 rounded">Copy Link</button>
+                </div>
+                <div id="qr-code" style="display: flex;padding: 20px;background-color: white;justify-content: center;"></div>
+                <div class="flex justify-center gap-4 mt-4">
+                    <!-- <button id="download-svg" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">Download SVG</button> -->
+                    <button id="download-png" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Download PNG</button>
+                </div>
             </div>
         </div>
+        <!-- <div class="max-w-md w-full text-center mt-8">
+            <p class="text-lg font-semibold">Unlock the full potential of your communication strategy with ScanToChat.in. It's fast, free, and designed with your convenience in mind. Streamline your WhatsApp interactions today!</p>
+        </div> -->
     </div>
 
     <script>
         document.getElementById('generate').addEventListener('click', function() {
             let phone = document.getElementById('phone').value.trim();
-            // Check if the phone number already starts with '+91', if not, prepend it
             if (!phone.startsWith('+91')) {
                 phone = '+91' + phone;
             }
             const message = encodeURIComponent(document.getElementById('message').value.trim());
-    
-            // Use wa.me for the QR code, which is more universally compatible with mobile devices
             const whatsappLinkMobile = `https://wa.me/${phone.replace('+', '')}?text=${message}`;
-    
             const linkElement = document.getElementById('whatsapp-link');
             const resultDiv = document.getElementById('result');
-    
-            // Decide the link based on the device
-            const whatsappLink = navigator.userAgent.match(/mobile/i)
-                ? whatsappLinkMobile
-                : `https://web.whatsapp.com/send?phone=${phone}&text=${message}`;
-    
-            linkElement.href = whatsappLink;
-            linkElement.textContent = 'Open WhatsApp Link';
-            resultDiv.style.display = 'block';
-    
-            // Clear previous QR Code
+
+            linkElement.href = whatsappLinkMobile;
+            linkElement.innerHTML = 'Open <u>WhatsApp Link</u>';
+            resultDiv.classList.remove('hidden');
+
             const qrContainer = document.getElementById('qr-code');
             qrContainer.innerHTML = '';
-            // Generate new QR Code with the mobile link
-            new QRCode(qrContainer, {
-                text: whatsappLinkMobile, // Use the mobile-friendly link for QR
+            const qrCode = new QRCode(qrContainer, {
+                text: whatsappLinkMobile,
                 width: 128,
                 height: 128,
                 colorDark: "#000000",
                 colorLight: "#ffffff",
                 correctLevel: QRCode.CorrectLevel.H
             });
+
+            // Copy to Clipboard
+            document.getElementById('copy-link').addEventListener('click', function() {
+                navigator.clipboard.writeText(whatsappLinkMobile).then(() => {
+                    alert('Link copied to clipboard!');
+                });
+            });
+
+            // Download QR as SVG - This feature requires additional implementation - (WIP)
+
+
+            // Download QR as PNG - This feature requires additional implementation - (V0)
+            document.getElementById('download-png').addEventListener('click', function() {
+            const qrCanvas = document.querySelector('#qr-code canvas');
+            if (qrCanvas) {
+                // Create a new canvas where we'll apply the padding
+                const canvasWithPadding = document.createElement('canvas');
+                const padding = 12; // Adjust the padding as needed
+                canvasWithPadding.width = qrCanvas.width + padding * 2;
+                canvasWithPadding.height = qrCanvas.height + padding * 2;
+                
+                const context = canvasWithPadding.getContext('2d');
+                
+                // Set background to white
+                context.fillStyle = '#ffffff';
+                context.fillRect(0, 0, canvasWithPadding.width, canvasWithPadding.height);
+                
+                // Draw the original QR code canvas onto the new canvas with padding
+                context.drawImage(qrCanvas, padding, padding);
+                
+                // Convert the new canvas to PNG and trigger download
+                const image = canvasWithPadding.toDataURL("image/png").replace("image/png", "image/octet-stream");
+                const link = document.createElement('a');
+                link.download = phone.replace('+91', '').replace('+', '') + '-qrcode.png';
+                link.href = image;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        });
+
+
+
         });
     </script>
-    
 </body>
 </html>
